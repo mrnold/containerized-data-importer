@@ -63,6 +63,7 @@ type DataVolumeSource struct {
 	Upload   *DataVolumeSourceUpload   `json:"upload,omitempty"`
 	Blank    *DataVolumeBlankImage     `json:"blank,omitempty"`
 	Imageio  *DataVolumeSourceImageIO  `json:"imageio,omitempty"`
+	VDDK     *DataVolumeSourceVDDK     `json:"vddk,omitempty"`
 }
 
 // DataVolumeSourcePVC provides the parameters to create a Data Volume from an existing PVC
@@ -119,7 +120,21 @@ type DataVolumeSourceImageIO struct {
 	CertConfigMap string `json:"certConfigMap,omitempty"`
 }
 
-// DataVolumeStatus provides the parameters to store the phase of the Data Volume
+// DataVolumeSourceVDDK provides the parameters to create a Data Volume from a Vmware source
+type DataVolumeSourceVDDK struct {
+	// URL is the URL of the vcenter or esxi host
+	URL string `json:"url,omitempty"`
+	// UUID is the UUID of the virtual machine the disk is attached to
+	UUID string `json:"uuid,omitempty"`
+	// BackingFile is the path to the disk's backing file in the datastore
+	BackingFile string `json:"backingFile,omitempty"`
+	// Thumbprint is the certificate thumbprint of the vcenter or esxi host
+	Thumbprint string `json:"thumbprint,omitempty"`
+	// SecretRef provides the secret reference needed to access the vcenter or esxi host
+	SecretRef string `json:"secretRef,omitempty"`
+}
+
+// DataVolumeStatus contains the current status of the DataVolume
 type DataVolumeStatus struct {
 	//Phase is the current phase of the data volume
 	Phase        DataVolumePhase    `json:"phase,omitempty"`
