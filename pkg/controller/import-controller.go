@@ -568,7 +568,8 @@ func getSource(pvc *corev1.PersistentVolumeClaim) string {
 		SourceGlance,
 		SourceNone,
 		SourceRegistry,
-		SourceImageio:
+		SourceImageio,
+		SourceVDDK:
 	default:
 		source = SourceHTTP
 	}
@@ -824,15 +825,15 @@ func makeImportEnv(podEnvVar *importPodEnvVar, uid types.UID) []corev1.EnvVar {
 			Value: podEnvVar.diskID,
 		},
 		{
-			Name: common.ImporterUUID,
+			Name:  common.ImporterUUID,
 			Value: podEnvVar.uuid,
 		},
 		{
-			Name: common.ImporterBackingFile,
+			Name:  common.ImporterBackingFile,
 			Value: podEnvVar.backingFile,
 		},
 		{
-			Name: common.ImporterThumbprint,
+			Name:  common.ImporterThumbprint,
 			Value: podEnvVar.thumbprint,
 		},
 	}
