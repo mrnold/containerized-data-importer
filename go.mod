@@ -37,6 +37,7 @@ require (
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
 	github.com/ulikunitz/xz v0.5.6
+	github.com/vmware/govmomi v0.23.1
 	go.uber.org/multierr v1.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
 	golang.org/x/sys v0.0.0-20191220220014-0732a990476f
