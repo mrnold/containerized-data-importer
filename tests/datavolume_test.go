@@ -166,6 +166,55 @@ var _ = Describe("[vendor:cnv-qe@redhat.com][level:component]DataVolume tests", 
 			return utils.NewDataVolumeForUpload(dataVolumeName, size)
 		}
 
+		createVddkDataVolume := func(dataVolumeName, size, url string) *cdiv1.DataVolume {
+			// Find vcenter-simulator pod
+			pod, err := utils.FindPodByPrefix(f.K8sClient, f.CdiInstallNs, "vcenter-deployment", "app=vcenter")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pod).ToNot(BeNil())
+
+			// Get test VM UUID
+			id, err := RunKubectlCommand(f, "exec", "-n", pod.Namespace, pod.Name, "--", "cat", "/tmp/vmid")
+			Expect(err).To(BeNil())
+			vmid, err := uuid.Parse(strings.TrimSpace(id))
+			Expect(err).To(BeNil())
+
+			// Create openshift-cnv namespace
+			ns, err := utils.GetOrCreateNamespace(f.K8sClient, common.VddkConfigMapNamespaces[0])
+			Expect(err).To(BeNil())
+			Expect(ns).ToNot(BeNil())
+
+			// Create v2v-vmware ConfigMap
+			stringData := map[string]string{
+				common.VddkConfigDataKey: "registry:5000/vddk-test",
+			}
+			configMap := v1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      common.VddkConfigMap,
+					Namespace: common.VddkConfigMapNamespaces[0],
+				},
+				Data: stringData,
+			}
+			cm, err := utils.CreateOrUpdateConfigMap(f.K8sClient, common.VddkConfigMapNamespaces[0], common.VddkConfigMap, &configMap)
+			Expect(err).To(BeNil())
+			Expect(cm).ToNot(BeNil())
+
+			// Create VDDK login secret
+			stringData = map[string]string{
+				common.KeyAccess: "user",
+				common.KeySecret: "pass",
+			}
+			backingFile := "testdisk.vmdk"
+			secretRef := "vddksecret"
+			thumbprint := "testprint"
+			s, _ := utils.CreateSecretFromDefinition(f.K8sClient, utils.NewSecretDefinition(nil, stringData, nil, f.Namespace.Name, secretRef))
+
+			return utils.NewDataVolumeWithVddkImport(dataVolumeName, size, backingFile, s.Name, thumbprint, url, vmid.String())
+		}
+
 		table.DescribeTable("should", func(args dataVolumeTestArguments) {
 			// Have to call the function in here, to make sure the BeforeEach in the Framework has run.
 			dataVolume := args.dvFunc(args.name, args.size, args.url())
