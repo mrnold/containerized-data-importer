@@ -54,6 +54,7 @@ require (
 	k8s.io/kube-aggregator v0.0.0
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
 	kubevirt.io/qe-tools v0.1.3
+	libguestfs.org/libnbd
 	sigs.k8s.io/controller-runtime v0.4.0
 )
 
