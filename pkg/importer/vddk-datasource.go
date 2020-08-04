@@ -29,6 +29,7 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"k8s.io/klog"
+	"libguestfs.org/libnbd"
 )
 
 const (
@@ -253,7 +254,12 @@ func (vs *VDDKDataSource) Transfer(path string) (ProcessingPhase, error) {
 
 // TransferFile is called to transfer the data from the source to the file passed in.
 func (vs *VDDKDataSource) TransferFile(fileName string) (ProcessingPhase, error) {
-	err := qemuOperations.ConvertToRawStream(vs.GetURL(), destinationFile)
+	h, err := libnbd.Create()
+	if err != nil {
+		klog.Infof("Failed to create libnbd handle")
+	}
+	h.Close()
+	err = qemuOperations.ConvertToRawStream(vs.GetURL(), destinationFile)
 	if err != nil {
 		klog.Infof("Failed to convert disk: %s\n", err)
 		return ProcessingPhaseError, err
