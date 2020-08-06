@@ -22,6 +22,7 @@ go_library(
         "//pkg/util:go_default_library",
         "//pkg/util/prometheus:go_default_library",
         "//vendor/github.com/minio/minio-go:go_default_library",
+        "//vendor/github.com/mrnold/libnbd:go_default_library",
         "//vendor/github.com/ovirt/go-ovirt:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/github.com/prometheus/client_golang/prometheus:go_default_library",

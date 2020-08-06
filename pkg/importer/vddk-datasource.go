@@ -25,6 +25,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/mrnold/libnbd"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
@@ -253,6 +254,8 @@ func (vs *VDDKDataSource) Transfer(path string) (ProcessingPhase, error) {
 
 // TransferFile is called to transfer the data from the source to the file passed in.
 func (vs *VDDKDataSource) TransferFile(fileName string) (ProcessingPhase, error) {
+	h, _ := libnbd.Create()
+	defer h.Close()
 	err := qemuOperations.ConvertToRawStream(vs.GetURL(), destinationFile)
 	if err != nil {
 		klog.Infof("Failed to convert disk: %s\n", err)
