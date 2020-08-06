@@ -22,6 +22,8 @@ source "${script_dir}"/config.sh
 
 WORK_DIR="/go/src/kubevirt.io/containerized-data-importer"
 
+docker image inspect ${BUILDER_IMAGE} || (cd hack/build/docker/builder && docker build . --tag ${BUILDER_IMAGE})
+
 # Execute the build
 [ -t 1 ] && USE_TTY="-it"
 docker run ${USE_TTY} \
