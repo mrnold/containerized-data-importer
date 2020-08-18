@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image")
+
+container_image(
+    name = "vddk-test-image",
+    base = "@fedora//image",
+    cmd = "mkdir -p /opt",
+    entrypoint = "vddk-test",
+    files = [
+        ":vddk-test",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["plugin.go"],
+    importpath = "kubevirt.io/containerized-data-importer/tools/vddk-test",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/mrnold/nbdkit-testing:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "vddk-test",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

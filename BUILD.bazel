@@ -63,6 +63,7 @@ container_bundle(
         "$(container_prefix)/imageio-init:$(container_tag)": "//tools/imageio-init:imageio-init-image",
         "$(container_prefix)/loop-back-lvm:$(container_tag)": "//tools/loop-back-lvm:loop-back-lvm-image",
         "$(container_prefix)/vddk-init:$(container_tag)": "//tools/vddk-init:vddk-init-image",
+        "$(container_prefix)/vddk-test:$(container_tag)": "//tools/vddk-test:vddk-test-image",
     },
 )
 

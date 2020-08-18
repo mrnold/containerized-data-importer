@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "nbdkit.go",
+        "utils.go",
+        "wrappers.go",
+    ],
+    importmap = "kubevirt.io/containerized-data-importer/vendor/github.com/mrnold/nbdkit-testing",
+    importpath = "github.com/mrnold/nbdkit-testing",
+    visibility = ["//visibility:public"],
+)
