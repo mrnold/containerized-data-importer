@@ -9,6 +9,7 @@ import (
 
 	featuregates "kubevirt.io/containerized-data-importer/pkg/feature-gates"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -68,6 +69,9 @@ var _ = Describe("[vendor:cnv-qe@redhat.com][level:component]DataVolume tests", 
 	}
 	imageioURL := func() string {
 		return fmt.Sprintf(utils.ImageioURL, f.CdiInstallNs)
+	}
+	vcenterURL := func() string {
+		return fmt.Sprintf(utils.VcenterURL, f.CdiInstallNs)
 	}
 
 	// Invalid (malicious) QCOW images:
@@ -684,6 +688,30 @@ var _ = Describe("[vendor:cnv-qe@redhat.com][level:component]DataVolume tests", 
 					Type:    cdiv1.DataVolumeBound,
 					Status:  v1.ConditionTrue,
 					Message: "PVC dv-import-registry Bound",
+					Reason:  "Bound",
+				},
+				runningCondition: &cdiv1.DataVolumeCondition{
+					Type:    cdiv1.DataVolumeRunning,
+					Status:  v1.ConditionFalse,
+					Message: "Import Complete",
+					Reason:  "Completed",
+				}}),
+			table.Entry("succeed creating import dv from VDDK source", dataVolumeTestArguments{
+				name:             "dv-import-vddk",
+				size:             "1Gi",
+				url:              vcenterURL,
+				dvFunc:           createVddkDataVolume,
+				eventReason:      controller.ImportSucceeded,
+				phase:            cdiv1.Succeeded,
+				checkPermissions: false,
+				readyCondition: &cdiv1.DataVolumeCondition{
+					Type:   cdiv1.DataVolumeReady,
+					Status: v1.ConditionTrue,
+				},
+				boundCondition: &cdiv1.DataVolumeCondition{
+					Type:    cdiv1.DataVolumeBound,
+					Status:  v1.ConditionTrue,
+					Message: "PVC dv-import-vddk Bound",
 					Reason:  "Bound",
 				},
 				runningCondition: &cdiv1.DataVolumeCondition{
