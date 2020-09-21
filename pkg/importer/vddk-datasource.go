@@ -25,6 +25,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/mrnold/libnbd"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
@@ -149,6 +150,12 @@ func createVddkDataSource(endpoint string, accessKey string, secKey string, thum
 		klog.Infof("Unable to parse endpoint: %s\n", endpoint)
 		return nil, err
 	}
+
+	a, err := libnbd.Create()
+	if err != nil {
+		klog.Infof("Failed to open libnbd!: %s\n", err)
+	}
+	a.Close()
 
 	// Construct VMware SDK URL and get MOref
 	sdkURL := vmwURL.Scheme + "://" + accessKey + ":" + secKey + "@" + vmwURL.Host + "/sdk"
