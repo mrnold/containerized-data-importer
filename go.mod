@@ -19,6 +19,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kubernetes-csi/external-snapshotter/v2 v2.1.1
 	github.com/kubevirt/controller-lifecycle-operator-sdk v0.0.7
+	github.com/mrnold/libnbd v1.3.10
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
 	github.com/openshift/api v0.0.0

@@ -259,6 +259,9 @@ github.com/mitchellh/mapstructure
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
+# github.com/mrnold/libnbd v1.3.10
+## explicit
+github.com/mrnold/libnbd
 # github.com/nxadm/tail v1.4.4
 github.com/nxadm/tail
 github.com/nxadm/tail/ratelimiter
