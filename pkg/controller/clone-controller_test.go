@@ -44,7 +44,6 @@ import (
 	cdiv1 "kubevirt.io/containerized-data-importer/pkg/apis/core/v1beta1"
 	"kubevirt.io/containerized-data-importer/pkg/common"
 	"kubevirt.io/containerized-data-importer/pkg/token"
-	"kubevirt.io/containerized-data-importer/pkg/uploadserver"
 	"kubevirt.io/containerized-data-importer/pkg/util/cert/fetcher"
 	"kubevirt.io/containerized-data-importer/pkg/util/cert/triple"
 )
@@ -792,7 +791,7 @@ func createSourcePod(pvc *corev1.PersistentVolumeClaim, pvcUID string) *corev1.P
 						},
 						{
 							Name:  "UPLOAD_URL",
-							Value: GetUploadServerURL(pvc.Namespace, pvc.Name, uploadserver.UploadPathSync),
+							Value: GetUploadServerURL(pvc.Namespace, pvc.Name, common.UploadPathSync),
 						},
 						{
 							Name:  common.OwnerUID,

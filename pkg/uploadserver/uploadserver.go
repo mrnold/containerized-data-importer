@@ -42,53 +42,9 @@ import (
 )
 
 const (
-	// UploadContentTypeHeader is the header upload clients may use to set the content type explicitly
-	UploadContentTypeHeader = "x-cdi-content-type"
-
-	// FilesystemCloneContentType is the content type when cloning a filesystem
-	FilesystemCloneContentType = "filesystem-clone"
-
-	// UploadPathSync is the path to POST CDI uploads
-	UploadPathSync = "/v1beta1/upload"
-
-	// UploadPathAsync is the path to POST CDI uploads in async mode
-	UploadPathAsync = "/v1beta1/upload-async"
-
-	// UploadFormSync is the path to POST CDI uploads as form data
-	UploadFormSync = "/v1beta1/upload-form"
-
-	// UploadFormAsync is the path to POST CDI uploads as form datain async mode
-	UploadFormAsync = "/v1beta1/upload-form-async"
-
 	healthzPort = 8080
 	healthzPath = "/healthz"
 )
-
-// ProxyPaths are all supported paths
-var ProxyPaths = append(
-	append(syncUploadPaths, asyncUploadPaths...),
-	append(syncUploadFormPaths, asyncUploadFormPaths...)...,
-)
-
-var syncUploadPaths = []string{
-	UploadPathSync,
-	"/v1alpha1/upload",
-}
-
-var asyncUploadPaths = []string{
-	UploadPathAsync,
-	"/v1alpha1/upload-async",
-}
-
-var syncUploadFormPaths = []string{
-	UploadFormSync,
-	"/v1alpha1/upload-form",
-}
-
-var asyncUploadFormPaths = []string{
-	UploadFormAsync,
-	"/v1alpha1/upload-form-async",
-}
 
 // UploadServer is the interface to uploadServerApp
 type UploadServer interface {
@@ -167,16 +123,16 @@ func NewUploadServer(bindAddress string, bindPort int, destination, tlsKey, tlsC
 		errChan:     make(chan error),
 	}
 
-	for _, path := range syncUploadPaths {
+	for _, path := range common.SyncUploadPaths {
 		server.mux.HandleFunc(path, server.uploadHandler(bodyReadCloser))
 	}
-	for _, path := range asyncUploadPaths {
+	for _, path := range common.AsyncUploadPaths {
 		server.mux.HandleFunc(path, server.uploadHandlerAsync(bodyReadCloser))
 	}
-	for _, path := range syncUploadFormPaths {
+	for _, path := range common.SyncUploadFormPaths {
 		server.mux.HandleFunc(path, server.uploadHandler(formReadCloser))
 	}
-	for _, path := range asyncUploadFormPaths {
+	for _, path := range common.AsyncUploadFormPaths {
 		server.mux.HandleFunc(path, server.uploadHandlerAsync(formReadCloser))
 	}
 
@@ -346,7 +302,7 @@ func (app *uploadServerApp) uploadHandlerAsync(irc imageReadCloser) http.Handler
 			return
 		}
 
-		cdiContentType := r.Header.Get(UploadContentTypeHeader)
+		cdiContentType := r.Header.Get(common.UploadContentTypeHeader)
 
 		klog.Infof("Content type header is %q\n", cdiContentType)
 
@@ -400,7 +356,7 @@ func (app *uploadServerApp) uploadHandler(irc imageReadCloser) http.HandlerFunc 
 			return
 		}
 
-		cdiContentType := r.Header.Get(UploadContentTypeHeader)
+		cdiContentType := r.Header.Get(common.UploadContentTypeHeader)
 
 		klog.Infof("Content type header is %q\n", cdiContentType)
 
@@ -431,7 +387,7 @@ func (app *uploadServerApp) uploadHandler(irc imageReadCloser) http.HandlerFunc 
 }
 
 func newAsyncUploadStreamProcessor(stream io.ReadCloser, dest, imageSize, contentType string) (*importer.DataProcessor, error) {
-	if contentType == FilesystemCloneContentType {
+	if contentType == common.FilesystemCloneContentType {
 		return nil, fmt.Errorf("async filesystem clone not supported")
 	}
 
@@ -441,7 +397,7 @@ func newAsyncUploadStreamProcessor(stream io.ReadCloser, dest, imageSize, conten
 }
 
 func newUploadStreamProcessor(stream io.ReadCloser, dest, imageSize, contentType string) error {
-	if contentType == FilesystemCloneContentType {
+	if contentType == common.FilesystemCloneContentType {
 		return filesystemCloneProcessor(stream, common.ImporterVolumePath)
 	}
 
