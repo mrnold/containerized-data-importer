@@ -620,3 +620,12 @@ http_file(
         "https://storage.googleapis.com/builddeps/964e39835b59c76b7eb3f78c460bfc6e7acfb0c40b901775c7e8a7204537f8a7",
     ],
 )
+
+http_file(
+    name = "device-mapper-devel",
+    sha256 = "a9206efe5ec1627b3cf8924d40944882bd7b4207af2f8af9aa9bae3580992721",
+    urls = [
+        "http://download.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os/Packages/d/device-mapper-devel-1.02.173-1.fc33.x86_64.rpm",
+        "https://storage.googleapis.com/builddeps/a9206efe5ec1627b3cf8924d40944882bd7b4207af2f8af9aa9bae3580992721",
+    ],
+)
