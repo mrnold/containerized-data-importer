@@ -5,6 +5,7 @@ rpm_image(
     name = "cdi-uploadserver-base-image",
     base = "@fedora//image",
     rpms = [
+        "@liburing//file",
         "@libnbd//file",
         "@tar//file",
         "@qemu-img//file",
