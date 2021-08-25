@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 	"github.com/pkg/errors"
 
+	"kubevirt.io/containerized-data-importer/pkg/image"
 	"kubevirt.io/containerized-data-importer/pkg/util"
 	"kubevirt.io/containerized-data-importer/pkg/util/cert"
 	"kubevirt.io/containerized-data-importer/pkg/util/cert/triple"
@@ -106,26 +108,26 @@ var _ = Describe("Imageio data source", func() {
 
 	It("NewImageioDataSource should fail when called with an invalid endpoint", func() {
 		newOvirtClientFunc = getOvirtClient
-		_, err = NewImageioDataSource("httpd://!@#$%^&*()dgsdd&3r53/invalid", "", "", "", diskID, "", "")
+		_, err = NewImageioDataSource("httpd://!@#$%^&*()dgsdd&3r53/invalid", "", "", "", diskID, "", "", "")
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("NewImageioDataSource info should not fail when called with valid endpoint", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).ToNot(HaveOccurred())
 		_, err = dp.Info()
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("NewImageioDataSource tranfer should fail if invalid path", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).ToNot(HaveOccurred())
 		_, err = dp.Transfer("")
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("NewImageioDataSource tranferfile should fail when invalid path", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).ToNot(HaveOccurred())
 		_, err = dp.Info()
 		Expect(err).NotTo(HaveOccurred())
@@ -135,14 +137,14 @@ var _ = Describe("Imageio data source", func() {
 	})
 
 	It("NewImageioDataSource url should be nil if not set", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).ToNot(HaveOccurred())
 		url := dp.GetURL()
 		Expect(url).To(BeNil())
 	})
 
 	It("NewImageioDataSource close should succeed if valid url", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).ToNot(HaveOccurred())
 		err = dp.Close()
 		Expect(err).ToNot(HaveOccurred())
@@ -150,19 +152,19 @@ var _ = Describe("Imageio data source", func() {
 
 	It("NewImageioDataSource should fail if transfer in unknown state", func() {
 		it.SetPhase(ovirtsdk4.IMAGETRANSFERPHASE_UNKNOWN)
-		_, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		_, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("NewImageioDataSource should fail if disk creation fails", func() {
 		diskCreateError = errors.New("this is error message")
-		_, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		_, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("NewImageioDataSource should fail if disk does not exists", func() {
 		diskAvailable = false
-		_, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		_, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -260,7 +262,7 @@ var _ = Describe("Imageio cancel", func() {
 	})
 
 	It("should clean up transfer on SIGTERM", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		Expect(err).ToNot(HaveOccurred())
 		timesFinalized := 0
 		resultChannel := make(chan struct {
@@ -291,7 +293,7 @@ var _ = Describe("Imageio cancel", func() {
 	})
 
 	DescribeTable("should finalize successful transfer on close", func(initialPhase, expectedPhase ovirtsdk4.ImageTransferPhase) {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		dp.imageTransfer.SetPhase(initialPhase)
 		Expect(err).ToNot(HaveOccurred())
 		timesFinalized := 0
@@ -309,7 +311,7 @@ var _ = Describe("Imageio cancel", func() {
 	)
 
 	DescribeTable("should cancel failed transfer on close", func(initialPhase, expectedPhase ovirtsdk4.ImageTransferPhase) {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		dp.imageTransfer.SetPhase(initialPhase)
 		Expect(err).ToNot(HaveOccurred())
 		timesCancelled := 0
@@ -331,7 +333,7 @@ var _ = Describe("Imageio cancel", func() {
 	)
 
 	DescribeTable("should take no action on final transfer states", func(initialPhase ovirtsdk4.ImageTransferPhase) {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, "", "", "")
 		dp.imageTransfer.SetPhase(initialPhase)
 		Expect(err).ToNot(HaveOccurred())
 		timesFinalized := 0
@@ -428,7 +430,7 @@ var _ = Describe("imageio snapshots", func() {
 	})
 
 	It("should correctly get initial snapshot transfer", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, snapshotID, "")
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, snapshotID, "", "")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(dp.currentSnapshot).To(Equal(snapshotID))
 		Expect(dp.previousSnapshot).To(Equal(""))
@@ -437,12 +439,50 @@ var _ = Describe("imageio snapshots", func() {
 	})
 
 	It("should correctly get child snapshot transfer", func() {
-		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, snapshotID, parentSnapshotID)
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, snapshotID, parentSnapshotID, "")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(dp.currentSnapshot).To(Equal(snapshotID))
 		Expect(dp.previousSnapshot).To(Equal(parentSnapshotID))
 		Expect(dp.contentLength).To(Equal(uint64(snapshotSize)))
 		Expect(dp.IsDeltaCopy()).To(Equal(true))
+	})
+
+	It("Should correctly rebase and commit", func() {
+		url := &url.URL{}
+		originalBackingFile := "original-backing-file"
+		expectedBackingFile := "rebased-backing-file"
+		originalActualSize := int64(5)
+		expectedActualSize := int64(6)
+
+		dp, err := NewImageioDataSource(ts.URL, "", "", tempDir, diskID, snapshotID, originalBackingFile, expectedBackingFile)
+		dp.url = url
+		Expect(err).ToNot(HaveOccurred())
+
+		err = errors.New("this operation should not be called")
+		info := &image.ImgInfo{
+			Format:      "",
+			BackingFile: originalBackingFile,
+			VirtualSize: 10,
+			ActualSize:  originalActualSize,
+		}
+		qemuOperations := NewFakeQEMUOperations(err, err, fakeInfoOpRetVal{info, nil}, err, err, nil)
+		replaceQEMUOperations(qemuOperations, func() {
+			// Check original backing file and size before processing
+			info, err := qemuOperations.Info(url)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(info.BackingFile).To(Equal(originalBackingFile))
+			Expect(info.ActualSize).To(Equal(originalActualSize))
+
+			// This should run rebase and commit
+			err = dp.MergeDelta()
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify backing file was rebased and committed to main data file
+			info, err = qemuOperations.Info(url)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(info.BackingFile).To(Equal(expectedBackingFile))
+			Expect(info.ActualSize).To(Equal(expectedActualSize))
+		})
 	})
 })
 

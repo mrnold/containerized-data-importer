@@ -56,10 +56,12 @@ type ImageioDataSource struct {
 	currentSnapshot string
 	// previousSnapshot is the UUID of the parent snapshot, if requested
 	previousSnapshot string
+	// destination is the path of the file to write
+	destination string
 }
 
 // NewImageioDataSource creates a new instance of the ovirt-imageio data provider.
-func NewImageioDataSource(endpoint string, accessKey string, secKey string, certDir string, diskID string, currentCheckpoint string, previousCheckpoint string) (*ImageioDataSource, error) {
+func NewImageioDataSource(endpoint string, accessKey string, secKey string, certDir string, diskID string, currentCheckpoint string, previousCheckpoint string, dest string) (*ImageioDataSource, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	imageioReader, contentLength, it, conn, err := createImageioReader(ctx, endpoint, accessKey, secKey, certDir, diskID, currentCheckpoint, previousCheckpoint)
 	if err != nil {
@@ -75,6 +77,7 @@ func NewImageioDataSource(endpoint string, accessKey string, secKey string, cert
 		connection:       conn,
 		currentSnapshot:  currentCheckpoint,
 		previousSnapshot: previousCheckpoint,
+		destination:      dest,
 	}
 	// We know this is a counting reader, so no need to check.
 	countingReader := imageioReader.(*util.CountingReader)
@@ -134,18 +137,10 @@ func (is *ImageioDataSource) Transfer(path string) (ProcessingPhase, error) {
 	// Otherwise, it is not safe to rebase the snapshot onto the previously-downloaded image.
 	// Need to check this after the transfer because it is not provided by the oVirt API.
 	if is.IsDeltaCopy() {
-		imageInfo, err := qemuOperations.Info(is.url)
-		if err != nil {
+		klog.Info("Successfully copied snapshot data, merging QCOW to base image.")
+		if err = is.MergeDelta(); err != nil {
 			return ProcessingPhaseError, err
 		}
-
-		backingFile := filepath.Base(imageInfo.BackingFile)
-		if backingFile != is.previousSnapshot {
-			return ProcessingPhaseError, errors.Errorf("snapshot backing file '%s' does not match expected checkpoint '%s', unable to safely rebase snapshot", backingFile, is.previousSnapshot)
-		}
-
-		klog.Info("Successfully copied snapshot data, moving to merge phase.")
-		return ProcessingPhaseMergeDelta, nil
 	}
 
 	return ProcessingPhaseConvert, nil
@@ -169,6 +164,34 @@ func (is *ImageioDataSource) TransferFile(fileName string) (ProcessingPhase, err
 // GetURL returns the URI that the data processor can use when converting the data.
 func (is *ImageioDataSource) GetURL() *url.URL {
 	return is.url
+}
+
+// MergeDelta rebases and commits a delta image to its backing file
+func (is *ImageioDataSource) MergeDelta() error {
+	if is.url == nil {
+		return errors.New("bad URL in data source")
+	}
+	imageInfo, err := qemuOperations.Info(is.url)
+	if err != nil {
+		return err
+	}
+
+	// Make sure the snapshot's backing file actually matches the expected parent snapshot.
+	// Otherwise, it is not safe to rebase the snapshot onto the previously-downloaded image.
+	// Need to check this after the transfer because it is not provided by the oVirt API.
+	backingFile := filepath.Base(imageInfo.BackingFile)
+	if backingFile != is.previousSnapshot {
+		return errors.Errorf("snapshot backing file '%s' does not match expected checkpoint '%s', unable to safely rebase snapshot", backingFile, is.previousSnapshot)
+	}
+
+	if err := qemuOperations.Rebase(is.destination, is.url.String()); err != nil {
+		return errors.Wrap(err, "error rebasing image")
+	}
+	if err := qemuOperations.Commit(is.url.String()); err != nil {
+		return errors.Wrap(err, "error committing image")
+	}
+
+	return nil
 }
 
 // Close all readers.

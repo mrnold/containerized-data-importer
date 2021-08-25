@@ -455,53 +455,6 @@ var _ = Describe("DataProcessorResume", func() {
 	})
 })
 
-var _ = Describe("MergeDelta", func() {
-	It("Should correctly move to merge phase, then rebase and commit", func() {
-		url := &url.URL{}
-		originalBackingFile := "original-backing-file"
-		expectedBackingFile := "rebased-backing-file"
-		originalActualSize := int64(5)
-		expectedActualSize := int64(6)
-
-		mdp := &MockDataProvider{
-			infoResponse:     ProcessingPhaseTransferScratch,
-			transferResponse: ProcessingPhaseMergeDelta,
-			needsScratch:     true,
-			url:              url,
-		}
-
-		dp := NewDataProcessor(mdp, expectedBackingFile, "dataDir", "scratchDataDir", "", 0.055, false)
-		err := errors.New("this operation should not be called")
-		info := &image.ImgInfo{
-			Format:      "",
-			BackingFile: originalBackingFile,
-			VirtualSize: 10,
-			ActualSize:  originalActualSize,
-		}
-		qemuOperations := NewFakeQEMUOperations(err, err, fakeInfoOpRetVal{info, nil}, err, err, nil)
-		replaceQEMUOperations(qemuOperations, func() {
-			// Check original backing file and size before processing
-			info, err := qemuOperations.Info(url)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(info.BackingFile).To(Equal(originalBackingFile))
-			Expect(info.ActualSize).To(Equal(originalActualSize))
-
-			// This should run rebase and commit
-			err = dp.ProcessData()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(2).To(Equal(len(mdp.calledPhases)))
-			Expect(ProcessingPhaseInfo).To(Equal(mdp.calledPhases[0]))
-			Expect(ProcessingPhaseTransferScratch).To(Equal(mdp.calledPhases[1]))
-
-			// Verify backing file was rebased and committed to main data file
-			info, err = qemuOperations.Info(url)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(info.BackingFile).To(Equal(expectedBackingFile))
-			Expect(info.ActualSize).To(Equal(expectedActualSize))
-		})
-	})
-})
-
 func replaceQEMUOperations(replacement image.QEMUOperations, f func()) {
 	orig := qemuOperations
 	if replacement != nil {
