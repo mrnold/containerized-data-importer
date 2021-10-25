@@ -12,18 +12,23 @@ type HostClient interface {
 	GetHost(id string, retries ...RetryStrategy) (Host, error)
 }
 
-// Host is the representation of a host returned from the oVirt Engine API. Hosts, also known as hypervisors, are the
-// physical servers on which virtual machines run. Full virtualization is provided by using a loadable Linux kernel
-// module called Kernel-based Virtual Machine (KVM).
-//
-// See https://www.ovirt.org/documentation/administration_guide/#chap-Hosts for details.
-type Host interface {
+// HostData is the core of Host, providing only data access functions.
+type HostData interface {
 	// ID returns the identifier of the host in question.
 	ID() string
 	// ClusterID returns the ID of the cluster this host belongs to.
 	ClusterID() string
 	// Status returns the status of this host.
 	Status() HostStatus
+}
+
+// Host is the representation of a host returned from the oVirt Engine API. Hosts, also known as hypervisors, are the
+// physical servers on which virtual machines run. Full virtualization is provided by using a loadable Linux kernel
+// module called Kernel-based Virtual Machine (KVM).
+//
+// See https://www.ovirt.org/documentation/administration_guide/#chap-Hosts for details.
+type Host interface {
+	HostData
 }
 
 // HostStatus represents the complex states an oVirt host can be in.
@@ -70,6 +75,40 @@ const (
 	// HostStatusUp indicates that the host is operating normally.
 	HostStatusUp HostStatus = "up"
 )
+
+// HostStatusList is a list of HostStatus.
+type HostStatusList []HostStatus
+
+// HostStatusValues returns all possible HostStatus values.
+func HostStatusValues() HostStatusList {
+	return []HostStatus{
+		HostStatusConnecting,
+		HostStatusDown,
+		HostStatusError,
+		HostStatusInitializing,
+		HostStatusInstallFailed,
+		HostStatusInstalling,
+		HostStatusInstallingOS,
+		HostStatusKDumping,
+		HostStatusMaintenance,
+		HostStatusNonOperational,
+		HostStatusNonResponsive,
+		HostStatusPendingApproval,
+		HostStatusPreparingForMaintenance,
+		HostStatusReboot,
+		HostStatusUnassigned,
+		HostStatusUp,
+	}
+}
+
+// Strings creates a string list of the values.
+func (l HostStatusList) Strings() []string {
+	result := make([]string, len(l))
+	for i, status := range l {
+		result[i] = string(status)
+	}
+	return result
+}
 
 func convertSDKHost(sdkHost *ovirtsdk4.Host, client Client) (Host, error) {
 	id, ok := sdkHost.Id()

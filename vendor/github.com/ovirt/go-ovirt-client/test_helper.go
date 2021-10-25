@@ -318,14 +318,8 @@ func (t *testHelper) GetStorageDomainID() string {
 	return t.storageDomainID
 }
 
-var letters = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") // nolint:gochecknoglobals
-
 func (t *testHelper) GenerateRandomID(length uint) string {
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = letters[t.rand.Intn(len(letters))]
-	}
-	return string(b)
+	return generateRandomID(length, t.rand)
 }
 
 // NewTestHelperFromEnv attempts to create a live test helper from environment variables and falls back
@@ -486,6 +480,14 @@ func getConnectionParametersForLiveTesting() (string, TLSProvider, error) {
 		configured = true
 		tls.CACertsFromFile(caFile)
 	}
+	if caDir := os.Getenv("OVIRT_CA_DIR"); caDir != "" {
+		configured = true
+		tls.CACertsFromDir(caDir)
+	}
+	if caFile := os.Getenv("OVIRT_CA_FILE"); caFile != "" {
+		configured = true
+		tls.CACertsFromFile(caFile)
+	}
 	if caCert := os.Getenv("OVIRT_CA_CERT"); caCert != "" {
 		configured = true
 		tls.CACertsFromMemory([]byte(caCert))
@@ -493,6 +495,10 @@ func getConnectionParametersForLiveTesting() (string, TLSProvider, error) {
 	if os.Getenv("OVIRT_INSECURE") != "" {
 		configured = true
 		tls.Insecure()
+	}
+	if system := os.Getenv("OVIRT_SYSTEM"); system != "" {
+		configured = true
+		tls.CACertsFromSystem()
 	}
 	if !configured {
 		return "", nil, fmt.Errorf("one of OVIRT_CAFILE, OVIRT_CA_CERT, or OVIRT_INSECURE must be set")
