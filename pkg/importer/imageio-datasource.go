@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -35,6 +36,7 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 
+	"kubevirt.io/containerized-data-importer/pkg/common"
 	"kubevirt.io/containerized-data-importer/pkg/util"
 )
 
@@ -1049,7 +1051,8 @@ func (e *extraSettings) ExtraHeaders() map[string]string {
 func getOvirtClient(ep string, accessKey string, secKey string) (ConnectionInterface, error) {
 	var conn *ovirtsdk4.Connection
 
-	tls := ovirtclient.TLS().Insecure()
+	tls := ovirtclient.TLS()
+	tls.CACertsFromDir(common.ImporterCertDir, regexp.MustCompile(`\.pem|\.crt|\.cer`))
 	logger := ovirtclientlog.New()
 	extras := &extraSettings{
 		compression:  true,
