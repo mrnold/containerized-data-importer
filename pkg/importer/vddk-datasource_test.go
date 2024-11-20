@@ -271,7 +271,7 @@ var _ = Describe("VDDK data source", func() {
 					Returnval: types.DiskChangeInfo{},
 				}, nil
 			}
-			counter += 1
+			counter++
 			return &types.QueryChangedDiskAreasResponse{
 				Returnval: changeInfo,
 			}, nil
